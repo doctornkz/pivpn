@@ -3,6 +3,7 @@
 
 ### Constants
 CLIENTS_FILE="/etc/wireguard/configs/clients.txt"
+REFRESH_INTERVAL=5
 
 ### Functions
 err() {
@@ -12,11 +13,12 @@ err() {
 scriptusage() {
   echo "::: List any connected clients to the server"
   echo ":::"
-  echo "::: Usage: pivpn <-c|clients> [-b|bytes]"
+  echo "::: Usage: pivpn <-c|clients> [-b|bytes] [-f|--follow]"
   echo ":::"
   echo "::: Commands:"
   echo ":::  [none]              List clients with human readable format"
   echo ":::  -b, bytes           List clients with dotted decimal notation"
+  echo ":::  -f, follow		 Continuously refresh the client output"
   echo ":::  -h, help            Show this usage dialog"
 }
 
@@ -35,7 +37,7 @@ listClients() {
 
   {
     printf "\e[4mName\e[0m  \t  \e[4mRemote IP\e[0m  \t  \e[4mVirtual IP\e[0m"
-    printf "\t  \e[4mBytes Received\e[0m  \t  \e[4mBytes Sent\e[0m  "
+    printf "\t  \e[4mRxBytes\e[0m  \t  \e[4mTxBytes\e[0m  "
     printf "\t  \e[4mLast Seen\e[0m\n"
 
     while IFS= read -r LINE; do
@@ -62,7 +64,7 @@ listClients() {
         fi
 
         if [[ "${LAST_SEEN}" -ne 0 ]]; then
-          printf "%s" "$(date -d @"${LAST_SEEN}" '+%b %d %Y - %T')"
+          printf "%s" "$(date -d @"${LAST_SEEN}" '+%d/%m/%y %T')"
         else
           printf "(not yet)"
         fi
@@ -85,27 +87,40 @@ if [[ ! -s "${CLIENTS_FILE}" ]]; then
   err "::: There are no clients to list"
   exit 0
 fi
+HR=1
+FOLLOW=0
 
 if [[ "$#" -eq 0 ]]; then
   HR=1
   listClients
 else
-  while true; do
+  while [[ "$#" -gt 0 ]]; do
     case "${1}" in
       -b | bytes)
         HR=0
-        listClients
-        exit 0
         ;;
+      -f | follow)
+        FOLLOW=1
+	;;
       -h | help)
         scriptusage
         exit 0
         ;;
       *)
         HR=0
-        listClients
-        exit 0
         ;;
     esac
+    shift
   done
+
+  if [[ "${FOLLOW}" -eq 1 ]]; then
+    clear
+    while true; do
+      tput cup 0 0
+      listClients
+      sleep "${REFRESH_INTERVAL}"
+    done
+  else
+    listClients
+  fi
 fi

@@ -13,7 +13,7 @@ err() {
 scriptusage() {
   echo "::: List any connected clients to the server"
   echo ":::"
-  echo "::: Usage: pivpn <-c|clients> [-b|bytes] [-f|--follow]"
+  echo "::: Usage: pivpn <-c|clients> [-b|bytes] [-f|follow]"
   echo ":::"
   echo "::: Commands:"
   echo ":::  [none]              List clients with human readable format"
